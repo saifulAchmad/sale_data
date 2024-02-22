@@ -24,7 +24,7 @@ filtered_df =filtered_df[filtered_df['Product Category'].isin(selectcat)]
 
 cust_type =filtered_df['Customer Type'].unique()
 selectcustype = st.sidebar.multiselect("Select Customer Type :", cust_type, default=cust_type)
-filtered_df =filtered_df[filtered_df['Customer Type'].isin(selectcustype)]   
+filtered_df =filtered_df[filtered_df['Customer Type'].isin(selectcustype)]
 
 
 st.write(filtered_df)
@@ -37,9 +37,15 @@ with tab1 :
     st.plotly_chart(fig)
 
 with tab2: 
+    # filtered_df = df[df['City'] == 'Melbourne']
     Suburb = filtered_df['Suburb'].value_counts()
-    fig = px.pie(names=Suburb.index, values=Suburb.values,
-                hover_data={'Suburb': Suburb.index})
+    # fig = px.pie(names=Suburb.index, values=Suburb.values,
+    #             hover_data={'Suburb': Suburb.index})
+    # fig = px.bar(x=Suburb.index, y=Suburb.values,
+    #          hover_data={'Suburb': Suburb.index})
+    fig = px.scatter_mapbox(filtered_df, lat='Latitude', lon='Longitude', hover_data=['Suburb'],
+                        zoom=10, height=300)
+    fig.update_layout(mapbox_style="carto-positron")
     st.plotly_chart(fig)
 
 # df['Order Date'] = pd.to_datetime(df['Order Date'])
@@ -82,16 +88,48 @@ with tab4:
     st.plotly_chart(fig)
     st.write(total_order_by_date_manager_monthly)
 
-# Orderdf.set_index('Order Date', inplace=True)
-# Orderdf.resample('M').sum()
-# Orderdf.reset_index(inplace=True)
-# Orderdf['Order Date'] = df['Order Date'].dt.strftime('%m/%Y')
-# Orderdf['Order Date']  = pd.to_datetime(Orderdf['Order Date'] , format='%m/%Y')
-# Orderdf= Orderdf.sort_values(by='Order Date')
+
+col3,col4= st.columns([1,1])
+
+with col3 : 
+    min_date = df['Order Date'].min()
+    max_date = df['Order Date'].max()
+    
+    start_date = st.date_input("Start date", min_value=min_date, max_value=max_date, value=min_date)
+    end_date = st.date_input("End date", min_value=min_date, max_value=max_date, value=max_date)
+    start_date = np.datetime64(start_date)
+    end_date = np.datetime64(end_date)
+    filtered_df = filtered_df[(filtered_df['Order Date'] >= start_date) & (filtered_df['Order Date'] <= end_date)]
+
+
+# with col4 : 
+#    st.write("""
+#     <div style="display: flex; flex-direction: column;">
+#     <div style="margin-bottom: 20px;">
+#         <h2>Column 1</h2>
+#         <button>Button 1</button>
+#     </div>
+#     <div>
+#         <h2>Column 2</h2>
+#         <button>Button 2</button>
+#     </div>
+#     </div>
+#     """, unsafe_allow_html=True)
+            
+
+
+
 
 col1,col2 = st.columns([1,1])
 
 with col1 :
     rev_df= filtered_df
+    total_value =rev_df['Total'].sum()
+    total_value =  '{:,.0f}'.format(total_value)
+
+    st.metric(label="Total Revenue :", value=total_value )
     
-    st.metric(label="Price per unit Percentage Compared from previous data :", value=f"{price_change:.2f} %" )
+with col2 : 
+    order_df = filtered_df
+    total_order = order_df.size
+    st.metric(label="Total Order :", value=total_order )
