@@ -3,9 +3,10 @@ import streamlit as st
 import numpy as np
 import plotly.express as px 
 import plotly.graph_objs as go
-
+from geopy.geocoders import Nominatim
 
 df = pd.read_csv("data_source/cleaned_data3.csv",compression="gzip")
+
 # ts= df["Total"].sum()
 # st.write(df)
 df['Order Date'] = pd.to_datetime(df['Order Date'])
@@ -26,6 +27,12 @@ cust_type =filtered_df['Customer Type'].unique()
 selectcustype = st.sidebar.multiselect("Select Customer Type :", cust_type, default=cust_type)
 filtered_df =filtered_df[filtered_df['Customer Type'].isin(selectcustype)]
 
+con_type =filtered_df['Product Container'].unique()
+selectcontype = st.sidebar.multiselect("Select Product Container :", con_type, default=con_type)
+filtered_df =filtered_df[filtered_df['Product Container'].isin(selectcontype)]
+
+
+
 
 st.write(filtered_df)
 
@@ -36,20 +43,29 @@ with tab1 :
                 hover_data={'City': City.index})
     st.plotly_chart(fig)
 
-with tab2: 
+# with tab2: 
+
+#     data = {'City': ['New York', 'Los Angeles', 'Chicago', 'Houston'],
+#         'Total Orders': [1000, 800, 600, 400]}
+#     df = pd.DataFrame(data)
+
+#     # Create a scatter plot
+#     fig = px.scatter(df, x=df.index, y='Total Orders', text='City', size='Total Orders', 
+#                     title='Total Orders by City', labels={'x': 'City Index', 'y': 'Total Orders'})
+#     fig.show()
     # filtered_df = df[df['City'] == 'Melbourne']
-    Suburb = filtered_df['Suburb'].value_counts()
+    # Suburb = filtered_df['Suburb'].value_counts()
     # fig = px.pie(names=Suburb.index, values=Suburb.values,
     #             hover_data={'Suburb': Suburb.index})
     # fig = px.bar(x=Suburb.index, y=Suburb.values,
     #          hover_data={'Suburb': Suburb.index})
-    fig = px.scatter_mapbox(filtered_df, lat='Latitude', lon='Longitude', hover_data=['Suburb'],
-                        zoom=10, height=300)
-    fig.update_layout(mapbox_style="carto-positron")
-    st.plotly_chart(fig)
+    # fig = px.scatter_mapbox(filtered_df, lat='Latitude', lon='Longitude', hover_data=['Suburb'],
+    #                     zoom=10, height=300)
+    # fig.update_layout(mapbox_style="carto-positron")
+    # st.plotly_chart(fig)
 
 # df['Order Date'] = pd.to_datetime(df['Order Date'])
-df['Order Date'] = pd.to_datetime(df['Order Date'])
+# df['Order Date'] = pd.to_datetime(df['Order Date'])
 
 
 tab3, tab4 = st.tabs(['Retail & Cost Price By Time','Total Order with Account Manager'])
@@ -102,34 +118,25 @@ with col3 :
     filtered_df = filtered_df[(filtered_df['Order Date'] >= start_date) & (filtered_df['Order Date'] <= end_date)]
 
 
-# with col4 : 
-#    st.write("""
-#     <div style="display: flex; flex-direction: column;">
-#     <div style="margin-bottom: 20px;">
-#         <h2>Column 1</h2>
-#         <button>Button 1</button>
-#     </div>
-#     <div>
-#         <h2>Column 2</h2>
-#         <button>Button 2</button>
-#     </div>
-#     </div>
-#     """, unsafe_allow_html=True)
-            
-
-
-
-
-col1,col2 = st.columns([1,1])
+col1,col2,col3 = st.columns([1,1,1])
 
 with col1 :
     rev_df= filtered_df
     total_value =rev_df['Total'].sum()
     total_value =  '{:,.0f}'.format(total_value)
 
-    st.metric(label="Total Revenue :", value=total_value )
+    st.metric(label="Total Revenue :", value=total_value+ " $" )
     
 with col2 : 
     order_df = filtered_df
     total_order = order_df.size
     st.metric(label="Total Order :", value=total_order )
+
+with col3 :
+    date_start =filtered_df['Order Date'] = pd.to_datetime(df['Order Date'], format='%d-%m-%Y')
+    date_end =filtered_df['Ship Date'] = pd.to_datetime(df['Ship Date'], format='%d-%m-%Y')
+    avg_date= ((date_end-date_start).dt.total_seconds() / 3600).mean()
+    avg_date=round(avg_date, 2)
+    avg_date_difference_str = str(avg_date)
+
+    st.metric(label="Avg Order To Shipment  :", value=avg_date_difference_str +" hour" )
